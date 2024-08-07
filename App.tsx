@@ -1,117 +1,129 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App = () => {
+  const [todos, setTodos] = useState([]);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [incompleteCount, setIncompleteCount] = useState(0);
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  useEffect(() => {
+    const completed = todos.filter(todo => todo.completed).length;
+    const incomplete = todos.length - completed;
+    setCompletedCount(completed);
+    setIncompleteCount(incomplete);
+  }, [todos]);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const addTodo = () => {
+    if (editingId !== null) {
+      setTodos(todos.map(todo => 
+        todo.id === editingId 
+        ? { ...todo, title, content } 
+        : todo
+      ));
+      setEditingId(null);
+    } else {
+      setTodos([...todos, { id: Date.now(), title, content, completed: false }]);
+    }
+    setTitle('');
+    setContent('');
   };
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+  const editTodo = (id) => {
+    const todo = todos.find(todo => todo.id === id);
+    setTitle(todo.title);
+    setContent(todo.content);
+    setEditingId(id);
+  };
+
+  const deleteTodo = (id) => {
+    setTodos(todos.filter(todo => todo.id !== id));
+  };
+
+  const toggleComplete = (id) => {
+    setTodos(todos.map(todo => 
+      todo.id === id 
+      ? { ...todo, completed: !todo.completed } 
+      : todo
+    ));
+  };
+
+  const renderTodo = ({ item }) => (
+    <View style={styles.todo}>
+      <Text style={styles.todoTitle}>{item.title}</Text>
+      <Text>{item.content}</Text>
+      <View style={styles.todoActions}>
+        <Button title={item.completed ? "Chua"  :"HoanThanh"} onPress={() => toggleComplete(item.id)} />
+        <Button title="Update" onPress={() => editTodo(item.id)} />
+        <Button title="Delete" onPress={() => deleteTodo(item.id)} />
+      </View>
+    </View>
   );
-}
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Quản lý danh sách công việc</Text>
+      <Text style={styles.count}>Hoàn thành: {completedCount}         |                 Chưa hoàn thiện: {incompleteCount}</Text>
+      <TextInput
+        placeholder="Title"
+        value={title}
+        onChangeText={setTitle}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Content"
+        value={content}
+        onChangeText={setContent}
+        style={styles.input}
+      />
+      <Button title={editingId !== null ? "Update job" : "Add job"} onPress={addTodo} />
+      <FlatList
+        data={todos}
+        renderItem={renderTodo}
+        keyExtractor={item => item.id.toString()}
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    padding: 20,
   },
-  sectionTitle: {
+  header: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
-  sectionDescription: {
-    marginTop: 8,
+  count: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  todo: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  todoTitle: {
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: 'bold',
   },
-  highlight: {
-    fontWeight: '700',
+  todoActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
   },
 });
 
